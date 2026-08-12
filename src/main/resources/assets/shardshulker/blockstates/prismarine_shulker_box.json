@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "facing=north": { "model": "shardshulker:block/prismarine_shulker_box" },
+    "facing=south": { "model": "shardshulker:block/prismarine_shulker_box" },
+    "facing=east": { "model": "shardshulker:block/prismarine_shulker_box" },
+    "facing=west": { "model": "shardshulker:block/prismarine_shulker_box" },
+    "facing=up": { "model": "shardshulker:block/prismarine_shulker_box" },
+    "facing=down": { "model": "shardshulker:block/prismarine_shulker_box" }
+  }
+}
