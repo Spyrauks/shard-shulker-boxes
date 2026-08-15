@@ -8,17 +8,12 @@ import com.spyrauks.shardshulker.item.recipe.ModRecipes;
 import com.spyrauks.shardshulker.menu.ModMenus;
 import com.spyrauks.shardshulker.utility.InsertShulkerPayload;
 import com.spyrauks.shardshulker.utility.ShulkerTweaks;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
-import net.neoforged.fml.ModList;
-import net.neoforged.neoforge.client.event.ContainerScreenEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.slf4j.Logger;
@@ -98,7 +93,6 @@ public class ShardShulker {
 
             if (menu != null && (payload.slotIndex() >= 0) && (payload.slotIndex() < menu.slots.size())) {
                 Slot slot = menu.getSlot(payload.slotIndex());
-                System.out.println("ICI" + slot.getItem() + "|" + menu.getCarried());
                 ItemStack shulkerStack = slot.getItem();
                 ItemStack stack = menu.getCarried();
 
@@ -113,8 +107,6 @@ public class ShardShulker {
 
                     ShulkerTweaks insertTweak = new ShulkerTweaks();
                     insertTweak.InsertShulkerBox(containerSize,tempShulkerStack,tempStack);
-
-                    System.out.println("ICI" + tempShulkerStack + "|" + tempStack);
 
                     slot.set(tempShulkerStack);
 
