@@ -1,4 +1,4 @@
-package com.spyrauks.shardshulker.jei;
+package com.spyrauks.shardshulker.compat.jei;
 
 import com.spyrauks.shardshulker.block.ModBlocks;
 import com.spyrauks.shardshulker.item.recipe.ShardShulkerBoxCrafting;
