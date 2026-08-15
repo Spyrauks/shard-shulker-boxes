@@ -2,9 +2,25 @@ package com.spyrauks.shardshulker;
 
 import com.spyrauks.shardshulker.block.ModBlocks;
 import com.spyrauks.shardshulker.block.blockentity.ModBlockEntities;
+import com.spyrauks.shardshulker.block.custom.ShardShulkerBoxBlock;
 import com.spyrauks.shardshulker.item.ModItems;
 import com.spyrauks.shardshulker.item.recipe.ModRecipes;
 import com.spyrauks.shardshulker.menu.ModMenus;
+import com.spyrauks.shardshulker.utility.InsertShulkerPayload;
+import com.spyrauks.shardshulker.utility.ShulkerTweaks;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.ShulkerBoxBlock;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.client.event.ContainerScreenEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -51,6 +67,8 @@ public class ShardShulker {
 
         // Register the item to a creative tab
         modEventBus.addListener(this::addCreative);
+
+        modEventBus.addListener(this::registerPacketDistribution);
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
@@ -63,6 +81,49 @@ public class ShardShulker {
             event.accept(ModBlocks.PRISMARINE_SHULKER_BOX);
             event.accept(ModBlocks.ECHO_SHULKER_BOX);
         }
+    }
+
+    private void registerPacketDistribution(RegisterPayloadHandlersEvent event) {
+        var register = event.registrar("1");
+
+        register.playToServer(InsertShulkerPayload.TYPE,InsertShulkerPayload.STREAM_CODEC,this::serverPayloadHandler);
+    }
+
+    private void serverPayloadHandler(InsertShulkerPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+
+
+            Player player = context.player();
+            AbstractContainerMenu menu = player.containerMenu;
+
+            if (menu != null && (payload.slotIndex() >= 0) && (payload.slotIndex() < menu.slots.size())) {
+                Slot slot = menu.getSlot(payload.slotIndex());
+                System.out.println("ICI" + slot.getItem() + "|" + menu.getCarried());
+                ItemStack shulkerStack = slot.getItem();
+                ItemStack stack = menu.getCarried();
+
+                if (!stack.isEmpty() && (Block.byItem(shulkerStack.getItem()) instanceof ShulkerBoxBlock shulkerBoxBlock)) {
+                    int containerSize = 27;
+                    if (shulkerBoxBlock instanceof ShardShulkerBoxBlock shardShulkerBoxBlock) {
+                        containerSize = shardShulkerBoxBlock.getContainerSize();
+                    }
+
+                    ItemStack tempShulkerStack = shulkerStack.copy();
+                    ItemStack tempStack = stack.copy();
+
+                    ShulkerTweaks insertTweak = new ShulkerTweaks();
+                    insertTweak.InsertShulkerBox(containerSize,tempShulkerStack,tempStack);
+
+                    System.out.println("ICI" + tempShulkerStack + "|" + tempStack);
+
+                    slot.set(tempShulkerStack);
+
+                    menu.setCarried(tempStack);
+
+                    menu.broadcastChanges();
+                }
+            }
+        });
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call
