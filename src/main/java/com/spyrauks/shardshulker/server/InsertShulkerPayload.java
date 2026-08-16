@@ -1,4 +1,4 @@
-package com.spyrauks.shardshulker.utility;
+package com.spyrauks.shardshulker.server;
 
 import com.spyrauks.shardshulker.ShardShulker;
 import net.minecraft.network.RegistryFriendlyByteBuf;

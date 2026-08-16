@@ -25,10 +25,12 @@ public class ShulkerTweaks {
                     if (count <= maxCount) {
                         stack.shrink(stack.getCount());
                         selectedItemStack.setCount(count);
+                        shulkerItems.set(i, selectedItemStack.copy());
                         break;
                     } else if (selectedItemStack.getCount() < maxCount) {
                         stack.shrink(maxCount - selectedItemStack.getCount());
                         selectedItemStack.setCount(maxCount);
+                        shulkerItems.set(i, selectedItemStack.copy());
                     }
                 }
             }
@@ -51,5 +53,19 @@ public class ShulkerTweaks {
         }
 
         shulkerBoxStack.set(DataComponents.CONTAINER,ItemContainerContents.fromItems(shulkerItems));
+    }
+
+    public ItemStack ExtractShulkerBox(int containerSize, ItemStack shulkerBoxStack, int selectedIndex) {
+        ItemContainerContents shulkerContents = shulkerBoxStack.getOrDefault(DataComponents.CONTAINER,ItemContainerContents.EMPTY);
+        NonNullList<ItemStack> shulkerItems = NonNullList.withSize(containerSize,ItemStack.EMPTY);
+        shulkerContents.copyInto(shulkerItems);
+
+        ItemStack selectedItemStack = shulkerItems.get(selectedIndex).copy();
+
+        shulkerItems.set(selectedIndex,ItemStack.EMPTY);
+
+        shulkerBoxStack.set(DataComponents.CONTAINER,ItemContainerContents.fromItems(shulkerItems));
+
+        return selectedItemStack;
     }
 }
