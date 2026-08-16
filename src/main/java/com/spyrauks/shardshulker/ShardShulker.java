@@ -6,19 +6,15 @@ import com.spyrauks.shardshulker.block.custom.ShardShulkerBoxBlock;
 import com.spyrauks.shardshulker.item.ModItems;
 import com.spyrauks.shardshulker.item.recipe.ModRecipes;
 import com.spyrauks.shardshulker.menu.ModMenus;
-import com.spyrauks.shardshulker.utility.InsertShulkerPayload;
+import com.spyrauks.shardshulker.server.ExtractShulkerPayload;
+import com.spyrauks.shardshulker.server.InsertShulkerPayload;
 import com.spyrauks.shardshulker.utility.ShulkerTweaks;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
-import net.neoforged.fml.ModList;
-import net.neoforged.neoforge.client.event.ContainerScreenEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.slf4j.Logger;
@@ -29,7 +25,6 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -86,19 +81,18 @@ public class ShardShulker {
     private void registerPacketDistribution(RegisterPayloadHandlersEvent event) {
         var register = event.registrar("1");
 
-        register.playToServer(InsertShulkerPayload.TYPE,InsertShulkerPayload.STREAM_CODEC,this::serverPayloadHandler);
+        register.playToServer(InsertShulkerPayload.TYPE, InsertShulkerPayload.STREAM_CODEC,this::serverInsertShulkerPayloadHandler);
+
+        register.playToServer(ExtractShulkerPayload.TYPE, ExtractShulkerPayload.STREAM_CODEC,this::serverExtractShulkerPayloadHandler);
     }
 
-    private void serverPayloadHandler(InsertShulkerPayload payload, IPayloadContext context) {
+    private void serverInsertShulkerPayloadHandler(InsertShulkerPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
-
-
             Player player = context.player();
             AbstractContainerMenu menu = player.containerMenu;
 
             if (menu != null && (payload.slotIndex() >= 0) && (payload.slotIndex() < menu.slots.size())) {
                 Slot slot = menu.getSlot(payload.slotIndex());
-                System.out.println("ICI" + slot.getItem() + "|" + menu.getCarried());
                 ItemStack shulkerStack = slot.getItem();
                 ItemStack stack = menu.getCarried();
 
@@ -114,13 +108,45 @@ public class ShardShulker {
                     ShulkerTweaks insertTweak = new ShulkerTweaks();
                     insertTweak.InsertShulkerBox(containerSize,tempShulkerStack,tempStack);
 
-                    System.out.println("ICI" + tempShulkerStack + "|" + tempStack);
-
                     slot.set(tempShulkerStack);
 
                     menu.setCarried(tempStack);
 
                     menu.broadcastChanges();
+                }
+            }
+        });
+    }
+
+    private void serverExtractShulkerPayloadHandler(ExtractShulkerPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Player player = context.player();
+            AbstractContainerMenu menu = player.containerMenu;
+
+            if (menu != null && (payload.slotIndex() >= 0) && (payload.slotIndex() < menu.slots.size())) {
+                Slot slot = menu.getSlot(payload.slotIndex());
+                ItemStack shulkerStack = slot.getItem();
+                ItemStack stack = menu.getCarried();
+
+                if (stack.isEmpty() && (Block.byItem(shulkerStack.getItem()) instanceof ShulkerBoxBlock shulkerBoxBlock)) {
+                    int containerSize = 27;
+                    if (shulkerBoxBlock instanceof ShardShulkerBoxBlock shardShulkerBoxBlock) {
+                        containerSize = shardShulkerBoxBlock.getContainerSize();
+                    }
+
+                    ItemStack tempShulkerStack = shulkerStack.copy();
+                    int selectedIndex = payload.selectedIndex();
+
+                    ShulkerTweaks extractTweak = new ShulkerTweaks();
+                    ItemStack extractedItemStack = extractTweak.ExtractShulkerBox(containerSize,tempShulkerStack,selectedIndex);
+
+                    if (!extractedItemStack.isEmpty()) {
+                        slot.set(tempShulkerStack);
+
+                        menu.setCarried(extractedItemStack);
+
+                        menu.broadcastChanges();
+                    }
                 }
             }
         });

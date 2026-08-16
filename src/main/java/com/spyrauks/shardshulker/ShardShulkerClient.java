@@ -1,24 +1,29 @@
 package com.spyrauks.shardshulker;
 
+import com.mojang.datafixers.util.Either;
 import com.spyrauks.shardshulker.block.ModBlocks;
 import com.spyrauks.shardshulker.block.blockentity.ModBlockEntities;
 import com.spyrauks.shardshulker.block.custom.ShardShulkerBoxBlock;
-import com.spyrauks.shardshulker.item.ModItems;
 import com.spyrauks.shardshulker.menu.ModMenus;
 import com.spyrauks.shardshulker.renderer.ShardShulkerBoxRenderer;
 import com.spyrauks.shardshulker.renderer.ShardShulkerItemRenderer;
 import com.spyrauks.shardshulker.screen.ShardShulkerBoxScreen;
-import com.spyrauks.shardshulker.utility.InsertShulkerPayload;
-import com.spyrauks.shardshulker.utility.ShulkerTweaks;
+import com.spyrauks.shardshulker.server.InsertShulkerPayload;
+import com.spyrauks.shardshulker.server.ExtractShulkerPayload;
+import com.spyrauks.shardshulker.utility.SelectionShulkerTooltip;
+import com.spyrauks.shardshulker.utility.ShulkerTooltip;
+import com.spyrauks.shardshulker.utility.ShulkerTooltipComponent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.resources.model.Material;
+import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.neoforged.api.distmarker.Dist;
@@ -27,9 +32,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
-import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.neoforge.client.event.*;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
@@ -111,20 +114,93 @@ public class ShardShulkerClient {
     }
 
     @SubscribeEvent
-    public static void PlayerInsert(ScreenEvent.MouseButtonPressed.Pre event) {
+    public static void PlayerInsertExtract(ScreenEvent.MouseButtonPressed.Pre event) {
         if ((event.getButton() == 1) && (event.getScreen() instanceof AbstractContainerScreen<?> container)) {
             Slot slot = container.getSlotUnderMouse();
             if (slot != null) {
                 ItemStack itemStack = slot.getItem();
                 if (Block.byItem(itemStack.getItem()) instanceof ShulkerBoxBlock) {
                     ItemStack carried = container.getMenu().getCarried();
+                    int selectedIndex = SelectionShulkerTooltip.getSelectedIndex();
 
-                    if (!((Block.byItem(carried.getItem()) instanceof ShulkerBoxBlock))) {
-                    event.setCanceled(true);
-                    PacketDistributor.sendToServer(new InsertShulkerPayload(slot.index));
-}
+                    if (carried.isEmpty()) {
+                        event.setCanceled(true);
+                        PacketDistributor.sendToServer(new ExtractShulkerPayload(slot.index,selectedIndex));
+                        SelectionShulkerTooltip.setSelectedIndex(0);
+                    } else if (!(Block.byItem(carried.getItem()) instanceof ShulkerBoxBlock)) {
+                        event.setCanceled(true);
+                        PacketDistributor.sendToServer(new InsertShulkerPayload(slot.index));
+                    }
                 }
             }
+        }
+    }
+
+    @SubscribeEvent
+    public static void PlayerExtractCancelSwap(ScreenEvent.MouseButtonReleased.Pre event) {
+        if ((event.getButton() == 1) && (event.getScreen() instanceof AbstractContainerScreen<?> container)) {
+            Slot slot = container.getSlotUnderMouse();
+            if (slot != null) {
+                ItemStack itemStack = slot.getItem();
+                if (Block.byItem(itemStack.getItem()) instanceof ShulkerBoxBlock) {
+
+                    event.setCanceled(true);
+                }
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void PlayerSelectExtract(ScreenEvent.MouseScrolled.Pre event) {
+        if (event.getScreen() instanceof AbstractContainerScreen<?> container) {
+            Slot slot = container.getSlotUnderMouse();
+            if (slot != null) {
+                ItemStack itemStack = slot.getItem();
+                if (Block.byItem(itemStack.getItem()) instanceof ShulkerBoxBlock shulkerBoxBlock) {
+                    int containerSize = 27;
+                    if (shulkerBoxBlock instanceof ShardShulkerBoxBlock shardShulkerBoxBlock) {
+                        containerSize = shardShulkerBoxBlock.getContainerSize();
+                    }
+
+                    SelectionShulkerTooltip.scroll(event.getScrollDeltaY(),containerSize);
+
+                    event.setCanceled(true);
+                }
+
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void registerShulkerTooltip(RegisterClientTooltipComponentFactoriesEvent event) {
+        event.register(ShulkerTooltipComponent.class, component -> new ShulkerTooltip(component));
+    }
+
+    @SubscribeEvent
+    public static void RenderShulkerTooltip(RenderTooltipEvent.GatherComponents event) {
+        ItemStack stack = event.getItemStack();
+
+        if (Block.byItem(stack.getItem()) instanceof ShulkerBoxBlock shulkerBoxBlock) {
+            int containerSize = 27;
+            if (shulkerBoxBlock instanceof ShardShulkerBoxBlock shardShulkerBoxBlock) {
+                containerSize = shardShulkerBoxBlock.getContainerSize();
+            }
+
+            SelectionShulkerTooltip.checkAndReset(containerSize);
+
+            while (event.getTooltipElements().size() > 3) {
+                event.getTooltipElements().remove(1);
+            }
+            // To remove the list of items in the tooltip, it's not necessary anymore
+
+            ItemContainerContents shulkerContents = stack.getOrDefault(DataComponents.CONTAINER,ItemContainerContents.EMPTY);
+            NonNullList<ItemStack> shulkerItems = NonNullList.withSize(containerSize,ItemStack.EMPTY);
+            shulkerContents.copyInto(shulkerItems);
+
+            int selectedIndex = SelectionShulkerTooltip.getSelectedIndex();
+
+            event.getTooltipElements().add(1, Either.right(new ShulkerTooltipComponent(containerSize,shulkerItems,selectedIndex)));
+
         }
     }
 }
