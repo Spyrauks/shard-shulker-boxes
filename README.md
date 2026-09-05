@@ -9,11 +9,8 @@ This mod was made as an alternative to Iron-styled storage mods and it gives mor
 - [Bag of Holding](https://modrinth.com/mod/bag-of-holding) : Early/Mid-Game backpack mod balanced compared to other backpack mods so as to not make shulker boxes useless.
 - [End Remastered](https://modrinth.com/mod/endrem) : Getting to the End requires more exploration which truly turns Shulker Boxes into End-Game backpacks.
 
-## Quality of Life Feature :
-- Quick Insert : Tired of having to place your Shulker Box to store items in it ? You can now do it directly from your inventory by dragging the items on the Shulker Box and right clicking on it.
-- Content Preview : You don't need to place a Shulker Box to check its content, just open your inventory and look at its tooltip.
-- Quick Extract : In the tooltip of Shulker Boxes, scroll to select an item and extract by right clicking.
+## Compatibilites :
+- [Easy Shulker Boxes](https://modrinth.com/mod/easy-shulker-boxes)
 
 ## Incompatibilities :
 - [Shulker Box Tooltip](https://modrinth.com/mod/shulkerboxtooltip)
-- [Easy Shulker Boxes](https://modrinth.com/mod/easy-shulker-boxes)
