@@ -1,0 +1,11 @@
+{
+	"type": "iteminteractions:container",
+	"background_color": "black",
+	"disallowed_item_contents" : [],
+	"equipment_slots": "any",
+	"filter_container_items":true,
+	"interaction_permissions":"always",
+	"inventory_height": 9,
+	"inventory_width": 12,
+	"supported_items": "shardshulker:echo_shulker_box"
+}
